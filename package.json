@@ -11,8 +11,13 @@
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"@cloudflare/workers-types": "^4.20250628.0",
+		"@types/node": "^24.0.7",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
 		"wrangler": "^4.22.0"
+	},
+	"dependencies": {
+		"chinese-conv": "^3.2.2"
 	}
 }

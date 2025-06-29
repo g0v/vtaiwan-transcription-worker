@@ -11,8 +11,29 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { readAudioToText } from './utils/readAudioToText';
+
+interface Env {
+	AI: Ai;
+}
+
 export default {
-	async fetch(request, env, ctx): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+
+		const pathname = new URL(request.url).pathname;
+		if (pathname.startsWith('/api/transcription/')) {
+
+			// 取得POST上傳的attachment
+			const formData = await request.formData();
+			const file = formData.get('file');
+			if (!file || typeof file === 'string') {
+				return new Response('No file uploaded', { status: 400 });
+			}
+			const buffer = await (file as File).arrayBuffer();
+			const text = await readAudioToText(buffer, env, 'zh');
+			return new Response(text);
+		}
+
 		return new Response('Hello World!');
 	},
 } satisfies ExportedHandler<Env>;
