@@ -4,7 +4,7 @@
 
 ## 功能特點
 
-- 🎵 支援多種音頻格式 (MP3, WAV, M4A 等)
+- 🎵 支援多種音頻格式 (MP3, WAV等)
 - 🤖 使用 Cloudflare Whisper AI 模型進行轉錄
 - 🇹🇼 自動轉換為繁體中文輸出
 - ⚡ 高效能的 Cloudflare Workers 平台
@@ -79,6 +79,14 @@ curl http://localhost:8787
 # 測試音頻轉錄
 curl -X POST \
   -F "file=@./files/test.mp3" \
+  http://localhost:8787/api/transcription/
+```
+
+
+```bash
+# 測試.wav音頻轉錄
+curl -X POST \
+  -F "file=@./files/test.wav" \
   http://localhost:8787/api/transcription/
 ```
 
