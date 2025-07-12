@@ -29,7 +29,7 @@ npm run cf-typegen
 ### 啟動開發伺服器
 
 ```bash
-npm run dev
+npm run dev --remote
 ```
 
 開發伺服器將在 `http://localhost:8787` 啟動。
