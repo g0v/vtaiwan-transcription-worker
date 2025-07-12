@@ -23,6 +23,23 @@
 	 * databases, object storage, AI inference, real-time communication and more.
 	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
 	 */
+	 // D1 資料庫配置
+	"d1_databases": [
+		{
+		  "binding": "DB",
+		  "database_name": "vtaiwan-transcriptions",
+		  "database_id": "1549c21e-2aa2-4f45-8943-3f9f92a543c8"  // 實際的 D1 database ID
+		}
+	],
+	// R2 儲存桶配置
+	"r2_buckets": [
+		{
+		  "binding": "R2",
+		  "bucket_name": "vtaiwan-meeting-files",
+		  "preview_bucket_name": "vtaiwan-meeting-files-preview"
+		}
+	],
+	// AI 推理配置
 	"ai": {
 		"binding": "AI"
 	}

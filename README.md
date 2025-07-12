@@ -18,19 +18,7 @@
 npm install
 ```
 
-### 2. 配置 Cloudflare AI 綁定
-
-確保 `wrangler.jsonc` 中已正確配置 AI 綁定：
-
-```json
-{
-  "ai": {
-    "binding": "AI"
-  }
-}
-```
-
-### 3. 生成類型定義
+### 2. 生成類型定義
 
 ```bash
 npm run cf-typegen
