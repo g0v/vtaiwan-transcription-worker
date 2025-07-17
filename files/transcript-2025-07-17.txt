@@ -1,0 +1,71 @@
+[上午04:30:34] Bestian: 今天清晨是英國的晚上
+
+[上午04:31:09] Bestian: 通常我給自己設定的上網時間是從早上6點開始 但是因為英國那邊早上6點 已經是晚上11點太晚了 所以今天就提早一點
+
+[上午04:34:38] Bestian: 就是如果是一般的會員可以上傳主資稿 可是呢為了避免就是被惡意覆蓋 所以只有管理員可以覆蓋主資稿 就是說比方說我們演講的話 轉錄了之後會變成一份主資稿嘛 那我會把它上傳上去 所以基本上如果不是管理員的人 就不能覆蓋掉 它原本的內容 如果它用同樣的黨名也不能覆蓋這樣 對修改跟覆蓋 修改大綱跟覆蓋主資稿這樣 但是如果是覆蓋的話 它大綱就會重新生成 就會全部被砍掉 所以盡量不要用覆蓋這樣
+
+[上午04:35:24] Bestian: 那施工中的按鈕點進去會到Github Issue 那 Issue 拿掉就是它的就是本來的網址這樣 就是點上面那個View v Taiwan 鈕 就會進到可以code clone 的地方這樣子
+
+[上午04:36:05] Bestian: 那這樣我想Clone下來 我們就先從程式碼的結構稍微導覽一下好了 這樣子議題的部分就之後再看 就是先看一下對程式碼的結構 稍微描一下 然後看有什麼問題我盡量回答
+
+[上午04:37:04] Bestian: npm i
+
+[上午04:40:33] Bestian: 所以我應該馬上設一個功能 就是可以讓它切換到不同天這樣子 因為我沒有想到時差的問題 會讓這個 對就是自己做的竹子稿轉入功能 好所以那為了讓我們在同一天 那個我們的導覽先 你先自己看有問題問我 然後我馬上修一下 看我們能不能在同一天這樣子
+
+[上午04:44:38] Bestian: 就每次做vibcoding都是這樣 就是AI是會出一些東西 但是不一定完全可靠 然後不可靠的時候就要手修 對因為這個專案之前 原本是那個 就是新開網站 本來用vibcoding價網站 那個豆腐跟Joy在做的事情 然後那他們的那個 網站架的也蠻漂亮的 只是用的框架會沒有辦法 網上加功能 用的是Astro 所以後來我就請Cursor 然後再加上首課 把它全部用Vue復刻了這樣
+
+[上午04:45:22] Bestian: https://cursor.com/cn
+
+[上午04:46:33] Bestian: 用tailwind是因為tofus對它較熟，選了我就不改了。
+
+[上午04:47:19] Bestian: login邏輯是firebase auth
+
+[上午04:47:40] Bestian: 對就是login的主要邏輯是Firebase 然後連到discourse的部分是 目前是取議題在那個topic view那邊
+
+[上午04:48:05] Bestian: 那目前從Discourse只有取議題 還沒有取到討論區 這個是我排到待辦事項的部分
+
+[上午04:51:38] Bestian: Home View是首頁的部分 然後共同都會有的是 APP.view裡面的header跟footer這樣
+
+[上午04:52:11] Bestian: 然後RouterView就是當Route切換的時候 它會顯示不同的頁面的部分 所以HomeView會套到這個RouterView的位置 然後比方說 如果我們現在在GT的話 GTView就會套到這個RouterView的位置 大概是這樣
+
+[上午04:52:30] Bestian: 它是ViewRouter內建的 所以它會動到的是在 Src router的index 那邊會看到它有哪些router可以用
+
+[上午04:54:40] Bestian: 就是概念是一樣的 但是它的寫法會有一點點不同 就是它的component寫法 現在變成就是在U2的時候 它都是資料寫在data裡面 然後方法寫在method裡面 那在view3裡頭的時候 它多了兩種寫法 一種是可以寫script setup 一種是比方說 我們現在在主字稿的部分是gtview 然後它的script的部分 好像就是寫成 它是用另外一種寫法 就是props多少setup多少 但是它這邊我寫的還是比較像view2的寫法 就是資料寫在data裡面 但是setup裡面也可以寫 也可以把一些data放進去 我看有沒有比較充分的例子 就是可以直接看一下 我看一下哦 嗯 哪一個裡面是setup的寫法 哦像blocksview 這是目前處理blocks的方法 它是AI生成 它就會比較傾向用view3 比較新的寫法 那我們用blocksview來當一個導覽 9 12 12
+
+[上午04:56:00] Bestian: 就原本data的部分就是 他都寫成const 然後 ConstBlocks等於ref什麼什麼東西 那ref就是他是一個響應式數據 他的值是可以調的 然後在呼叫他的時候 在呼叫他的時候呢 是用他的value來呼叫 就是比方說 在81行裡面就是 ReturnBlocks.value.filter什麼什麼東西 或者是79行的時候 CurrentLong等於locale.value 就是用的部分 然後那這些 對然後這下來語言 對然後 那他的data到最後的部分會 就沒有特別寫在data裡 就是如果他scriptdata上面 他setup上面他創造的這些const的 資料跟 函數就會自動變成像YouTube裡面的 data跟method大概是這樣 
+
+[上午04:56:52] Bestian: 你有裝那個view的擴充套件嗎 好那就先裝一下去chrome extension 找一下那個view的擴充套件 我也可以幫你找貼上來
+
+[上午05:06:49] Bestian: 時光旅行的概念，很酷
+
+[上午05:08:19] Bestian: 然後這個議題的部分好像 我昨天才串的 所以它好像沒有呈現出所有 但是Audrey說 所有一定都會呈現出來 所以我在想說 是不是城市有截斷一部分 還是有過濾一部分 我還沒有去看 那個是版國iFive Coding的結果
+
+[上午05:08:37] Bestian: 網路霸浚也沒有過來 在talk.taiwan.tw
+
+[上午05:09:58] Bestian: https://github.com/g0v/vue.vTaiwan-neo/issues/49
+
+[上午05:12:41] Shu Yang Lin: test test test test
+
+[上午05:12:51] Shu Yang Lin: 可以講中文嗎
+
+[上午05:13:41] Shu Yang Lin: 好 再講一次 在talk.vtaiwan.tw下面 有很多個分類 在discord上有很多個分類 然後現在會放到網站上的分類 就之前的邏輯來說 就是我們2017年的時候 寫網站的邏輯來說 是在discord上的meta META這個分類裡面 裡面的議題才會被放到網站上 然後這就是為什麼 可能其他我們在discord上 看得到的topics 是還沒有到網站上的 但是如果你進去meta 這個分類裡面的議題就可以 就可以發現裡面的議題 都有在現在網站上
+
+[上午05:17:10] Bestian: 這樣對對 現在看到的是你的熒幕的某一個部分 還在talk那個對 哦哦你有雙螢幕 OK
+
+[上午05:19:20] Bestian: 因為有些東西 就是我們的Master這個branch 它是自動部署的 等於說你只要更新了 你不用按build 它會自己部署到網站上 那為了必開發到一半的東西 被自動部署下去 通常就是我們會 在分支裡面做開發 然後開發完了之後再整合 那就是像跟逐字稿有關的 可能就是GC mute without view SDK那一個 然後或者是 對應該是那一個 然後當然如果你對這些 舊的branch不熟 你也可以都全部都新開branch 然後做了之後再整合就好了 就不用管舊的branch
+
+[上午05:21:25] Bestian: 導覽一下cursor editor的一些功能
+
+[上午05:23:33] Bestian: 就Cursor它有Agent的話 它就是可以自動幫你去執行 不只是修訂程式碼 還包含執行安裝套件等等的 Command命令在你Accept它的時候 它都可以幫你做 等於就是你把你想要的功能 或者是操作寫上去 然後這個Agent會幫你去自動執行 當然有些需要權限的部分 它會要你Accept才能做這樣
+
+[上午05:23:56] Bestian: 然後Tab是自動補完 就是按Tab鍵 就是它有快速鍵 就是Agent的快速鍵 Tab的快速鍵 這樣然後Tab是自動補完 它會聯想說 你下一面的程式大概要寫什麼 如果對的話就按Tab 它就會自動補
+
+[上午05:24:11] Bestian: Inline Edit應該是說在編輯的時候 他可以選快速生成 然後他就在裡面去修改一小段
+
+[上午05:25:51] Bestian: 通常我的手法是issue只要寫得夠清楚 把它全文貼上去叫agent來 就可以解決一大半
+
+[上午05:27:09] Bestian: 在右上角跟Agent聊天 然後逐字稿那個太小的部分的話 通常我們的做法是 你要先到那個GT 不是GTView Component Component裡面的那個 Component裡面的那個TranscriptionPanelView 然後呢 點進去之後 有一個叫TranscriptionPanel.View 在UnderControl的上一個 對然後點進去之後 全選之後按Command L 它就進到脈絡裡了 然後AI就會看 對 然後 然後之後 AI看這個程式碼的時候 你就把議題的那個標題跟內容都貼進去 因為內容裡面是叫它怎麼改 標題只是反映問題 它反映問題 它會自己聯想一堆奇怪的改法 但是內容才是叫它確切要怎麼改 這樣
+
+[上午05:28:46] Bestian: 通常我的做法就是說 先到local host 去看效果 然後效果好就全部accept 如果效果不好 再逐行去看就好了
+
+[上午05:45:52] Bestian: https://desktop.github.com/download/
