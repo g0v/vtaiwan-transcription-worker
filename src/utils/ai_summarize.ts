@@ -59,12 +59,21 @@ function splitTextIntoChunks(text: string, maxCharsPerChunk: number = 3000): str
 
 // 為單個chunk生成摘要（添加超時控制）
 async function generateChunkSummary(chunk: string, env: any, chunkIndex: number, totalChunks: number): Promise<string> {
+
+	console.log(`開始處理第${chunkIndex + 1}/${totalChunks}段，長度：${chunk.length} 字符`);
+
 	const prompt = totalChunks > 1
 		? `請為以下第${chunkIndex + 1}/${totalChunks}段內容生成重點摘要：`
 		: `請用正體中文把以下內容整理出來，重點整理。：`;
 
+	//console.log(`prompt：${prompt}`);
+	//console.log(`chunk：${chunk}`);
+
 	try {
-		const response = await env.AI.run("@hf/thebloke/neural-chat-7b-v3-1-awq", {
+		// 換成llama3.2
+		const response = await env.AI.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", {
+
+		// const response = await env.AI.run("@hf/thebloke/neural-chat-7b-v3-1-awq", {
 			messages: [
 				{
 					role: "system",
@@ -77,6 +86,7 @@ async function generateChunkSummary(chunk: string, env: any, chunkIndex: number,
 			]
 		});
 
+		//console.log(`摘要：${response.response}`);
 		return response.response;
 	} catch (error) {
 		console.error(`Chunk ${chunkIndex + 1} AI處理失敗:`, error);
@@ -102,7 +112,9 @@ export async function generateOutline(transcription: string, env: any): Promise<
 	// 如果文本較短，直接處理
 	if (transcription.length <= 3000) {
 		console.log("文本較短，直接處理");
-		return await generateChunkSummary(transcription, env, 0, 1);
+		const summary = await generateChunkSummary(transcription, env, 0, 1);
+		console.log(`摘要：${summary}`);
+		return summary;
 	}
 
 	// 將文本分割成適當大小的段落（增加chunk大小到3000）
