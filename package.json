@@ -3,10 +3,10 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev --remote",
-		"dev:local": "wrangler dev",
-		"start": "wrangler dev --remote",
+		"deploy": "npx wrangler deploy",
+		"dev": "npx wrangler dev --remote",
+		"dev:local": "npx wrangler dev",
+		"start": "npx wrangler dev --remote",
 		"test": "vitest",
 		"cf-typegen": "wrangler types"
 	},
@@ -16,7 +16,7 @@
 		"@types/node": "^24.0.7",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
-		"wrangler": "^4.22.0"
+		"wrangler": "^4.28.0"
 	},
 	"dependencies": {
 		"chinese-conv": "^3.2.2"
