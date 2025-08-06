@@ -4,7 +4,7 @@
 
 ```bash
 curl -X POST \
-  -F "file=@files/transcript-2025-07-25.txt" \
+  -F "file=@files/transcript-2025-07-17.txt" \
   -H "Origin: http://localhost:3000" \
   http://localhost:8787/api/test-ai
 ```

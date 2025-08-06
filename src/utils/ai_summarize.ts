@@ -70,24 +70,28 @@ async function generateChunkSummary(chunk: string, env: any, chunkIndex: number,
 	//console.log(`chunk：${chunk}`);
 
 	try {
-		// 換成llama3.2
-		const response = await env.AI.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", {
-
-		// const response = await env.AI.run("@hf/thebloke/neural-chat-7b-v3-1-awq", {
-			messages: [
-				{
-					role: "system",
-					content: prompt
-				},
-				{
-					role: "user",
-					content: chunk
-				}
-			]
+		// 使用 gpt-oss-20b 模型
+		const response = await env.AI.run("@cf/openai/gpt-oss-20b", {
+			instructions: prompt,
+			input: chunk
 		});
 
-		//console.log(`摘要：${response.response}`);
-		return response.response;
+		// 處理回應格式
+		let result = '';
+
+		console.log(JSON.stringify(response));
+
+		let output = response.output;
+		console.log(output[output.length - 1].content[0].text);
+
+		result = output[output.length - 1].content[0].text;
+
+		if (!result) {
+			console.error('無法解析 AI 回應格式:', response);
+			throw new Error('AI 模型返回了無法解析的結果格式');
+		}
+
+		return result;
 	} catch (error) {
 		console.error(`Chunk ${chunkIndex + 1} AI處理失敗:`, error);
 		return `第${chunkIndex + 1}段：AI處理失敗，原始內容長度 ${chunk.length} 字符`;
