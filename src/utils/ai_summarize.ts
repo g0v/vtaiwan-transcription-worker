@@ -1,5 +1,5 @@
 // 智能分段函數：優先按段落分割，如果段落太大則按句子分割
-function splitTextIntoChunks(text: string, maxCharsPerChunk: number = 3000): string[] {
+function splitTextIntoChunks(text: string, maxCharsPerChunk: number = 15000): string[] {
 	const chunks: string[] = [];
 
 	// 首先按段落分割（以換行為分隔符）
@@ -114,15 +114,15 @@ export async function generateOutline(transcription: string, env: any): Promise<
 	console.log(`開始處理逐字稿，總長度：${transcription.length} 字符`);
 
 	// 如果文本較短，直接處理
-	if (transcription.length <= 3000) {
+	if (transcription.length <= 15000) {
 		console.log("文本較短，直接處理");
 		const summary = await generateChunkSummary(transcription, env, 0, 1);
 		console.log(`摘要：${summary}`);
 		return summary;
 	}
 
-	// 將文本分割成適當大小的段落（增加chunk大小到3000）
-	const chunks = splitTextIntoChunks(transcription, 3000);
+	// 將文本分割成適當大小的段落（增加chunk大小到15000）
+	const chunks = splitTextIntoChunks(transcription, 15000);
 	console.log(`分割成 ${chunks.length} 個段落進行處理`);
 
 	if (chunks.length === 0) {
@@ -132,7 +132,7 @@ export async function generateOutline(transcription: string, env: any): Promise<
 	// 限制最大chunk數量避免超時
 	if (chunks.length > 10) {
 		console.log(`段落數量過多(${chunks.length})，將合併為較大段落`);
-		const largerChunks = splitTextIntoChunks(transcription, 6000);
+		const largerChunks = splitTextIntoChunks(transcription, 30000);
 		if (largerChunks.length <= 8) {
 			return await processChunks(largerChunks, env);
 		} else {
