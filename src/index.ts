@@ -92,11 +92,44 @@ export default {
 			if (!file || typeof file === 'string') {
 				return new Response('No file uploaded', { status: 400, headers: corsHeaders });
 			}
-			const buffer = await (file as File).arrayBuffer();
-			const text = await readAudioToText(buffer, env, 'zh');
-			return new Response(text, {
-				headers: corsHeaders,
-			});
+
+			try {
+				const buffer = await (file as File).arrayBuffer();
+				const text = await readAudioToText(buffer, env, 'zh');
+				return new Response(text, {
+					headers: corsHeaders,
+				});
+			} catch (error: any) {
+				console.error('轉錄失敗:', error.message);
+
+				// 檢查是否為 AI 幻覺回應錯誤
+				if (error.message.includes('AI 產生幻覺回應')) {
+					return new Response(JSON.stringify({
+						error: '音檔音量過低',
+						message: error.message,
+						code: 'LOW_VOLUME'
+					}), {
+						status: 422, // 422 = Unprocessable Entity，表示內容有問題但請求格式正確
+						headers: {
+							...corsHeaders,
+							'Content-Type': 'application/json'
+						}
+					});
+				}
+
+				// 其他轉錄失敗錯誤
+				return new Response(JSON.stringify({
+					error: '轉錄失敗',
+					message: error.message,
+					code: 'TRANSCRIPTION_ERROR'
+				}), {
+					status: 400,
+					headers: {
+						...corsHeaders,
+						'Content-Type': 'application/json'
+					}
+				});
+			}
 		}
 
 		// 單獨測試AI的整理功能

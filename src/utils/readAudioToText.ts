@@ -64,8 +64,19 @@ interface Env {
 		throw new Error('AI 模型返回了空的結果');
 	  }
 
-	  // 將結果轉換為繁體中文
+	  // 檢查是否為 AI 幻覺回應
+	  const trimmedResult = result.trim();
+	  const isHallucination = (
+		(trimmedResult.startsWith('字幕志願者') || trimmedResult.startsWith('字幕志愿者')) &&
+		trimmedResult.length < 30
+	  );
 
+	  if (isHallucination) {
+		console.log('🚨 檢測到 AI 幻覺回應:', trimmedResult);
+		throw new Error(`音檔音量過低，AI 產生幻覺回應: "${trimmedResult}"`);
+	  }
+
+	  // 將結果轉換為繁體中文
 	  console.log('result是：');
 	  console.log(result);
 
