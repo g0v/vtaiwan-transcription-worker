@@ -31,11 +31,12 @@ const ALLOWED_ORIGINS = [
 	'http://localhost:3000',
 	'http://localhost:3001',
 	'http://localhost:4173',
-	  'http://localhost:4174',
+	'http://localhost:4174',
 	'http://localhost:8080',
 	'http://localhost:8081',
 	'https://vtaiwan.tw',
 	'https://www.vtaiwan.tw',
+	'https://vue.vtaiwan.tw',
 	'https://talk.vtaiwan.tw',
 	// 可以根據需要添加更多允許的來源
   ];
