@@ -1,4 +1,4 @@
-# vTaiwan 音頻轉錄 Worker
+# vTaiwan 音頻轉錄與AI自動摘要 Worker
 
 這是一個基於 Cloudflare Workers 的音頻轉錄服務，使用 Whisper AI 模型將音頻檔案轉換為繁體中文文字。
 
@@ -9,6 +9,7 @@
 - 🇹🇼 自動轉換為繁體中文輸出
 - ⚡ 高效能的 Cloudflare Workers 平台
 - 🌐 RESTful API 介面
+- 🧠 使用 `@cf/openai/gpt-oss-120b` 自動整理逐字稿重點
 
 ## 安裝與設定
 
@@ -91,6 +92,33 @@ curl -X POST \
   -F "file=@./files/test.m4a" \
   http://localhost:8787/api/transcription/
 ```
+
+## AI 自動摘要功能
+
+AI 自動摘要會將逐字稿切成最大約 15,000 字符的區塊，透過 `@cf/openai/gpt-oss-120b` 生成每段重點後再彙整為完整大綱。若內容超過 8 段，會自動限制只處理前幾段以避免超時。
+
+### 單段測試
+
+```bash
+curl -X POST \
+  -F "file=@./files/sample.txt" \
+  http://localhost:8787/api/test-ai
+```
+
+以上端點會讀取文字檔並返回 AI 整理的大綱結果。
+
+### 上傳完整逐字稿
+
+```bash
+curl -X POST \
+  -F "file=@./files/transcript-2025-07-16.txt" \
+  http://localhost:8787/api/upload-transcription
+```
+
+成功後會：
+- 將檔案原文上傳到 R2 儲存
+- 自動產出大綱並寫入 D1 資料庫
+- 回傳 `meeting_id` 與 R2 儲存鍵值
 
 ## 部署
 
