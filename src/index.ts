@@ -87,6 +87,19 @@ export default {
 
 		if (pathname.startsWith('/api/transcription/')) {
 
+			// '/api/transcription/zh-TW'
+			// '/api/transcription/ja'
+			const language = pathname.replace('/api/transcription/', '') || 'zh-TW';
+
+			// INSERT_YOUR_CODE
+			// 語言 mapping
+			const languageMap: Record<string, string> = {
+				'zh-TW': 'zh',
+				'en': 'en',
+				'ja': 'ja'
+			};
+			const mappedLanguage = languageMap[language] || language;
+
 			// 取得POST上傳的attachment
 			const formData = await request.formData();
 			const file = formData.get('file');
@@ -96,7 +109,7 @@ export default {
 
 			try {
 				const buffer = await (file as File).arrayBuffer();
-				const text = await readAudioToText(buffer, env, 'zh');
+				const text = await readAudioToText(buffer, env, mappedLanguage);
 				return new Response(text, {
 					headers: corsHeaders,
 				});
