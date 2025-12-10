@@ -5,6 +5,26 @@ interface Env {
 	AI: Ai;  // Cloudflare AI 模型接口
   }
 
+  export async function translateToZh(userText: string, source_lang: string, env: any): Promise<string> {
+		console.log('userText:', userText);
+
+		// 以AI翻譯
+		const response = await env.AI.run(
+			"@cf/meta/m2m100-1.2b",
+			{
+				text: userText,
+				source_lang: source_lang,
+				target_lang: "zh",
+		});
+
+		console.log('response:', response);
+		console.log('response.translated_text:', response.translated_text);
+		// const result = tify(response.translated_text);
+		// console.log('result:', result);
+		return response.translated_text;
+		// return result;
+	}
+
   export async function readAudioToText(audioBuffer: ArrayBuffer, env: Env, language: string): Promise<string> {
 	try {
 	  if (!env.AI) {
@@ -80,12 +100,20 @@ interface Env {
 	  console.log('result是：');
 	  console.log(result);
 
-	  const result_tw = tify(result);
+	  let result_translated;
+	  let result_combined;
 
-	  console.log('result_tw是：');
-	  console.log(result_tw);
+	  if (language !== 'zh') {
+		result_translated = await translateToZh(result, language, env);
+		result_combined = result + '\n\n(自動翻譯)\n' + tify(result_translated);
+	  } else {
+		result_combined = tify(result);
+	  }
 
-	  return result_tw;
+	  console.log('result_combined是：');
+	  console.log(result_combined);
+
+	  return result_combined;
 
 	} catch (error: any) {
 	  console.error('音頻轉文字失敗:', error);

@@ -67,8 +67,8 @@ curl http://localhost:8787
 ```bash
 # 測試音頻轉錄
 curl -X POST \
-  -F "file=@./files/test.mp3" \
-  http://localhost:8787/api/transcription/
+  -F "file=@./files/ja.mp3" \
+  http://localhost:8787/api/transcription/ja
 ```
 
 
