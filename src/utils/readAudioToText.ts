@@ -21,8 +21,19 @@ interface Env {
 		console.log('response.translated_text:', response.translated_text);
 		// const result = tify(response.translated_text);
 		// console.log('result:', result);
-		return response.translated_text;
-		// return result;
+
+		// 用gpt-oss-20b模型請把以下內容修成台灣常用正體中文用語，避免中國大陸地區慣用語，只在必要時替換詞彙與語序，不要改變意思。
+		const response_tw = await env.AI.run("@cf/openai/gpt-oss-20b", {
+			instructions: "請把以下內容修成台灣常用正體中文用語，避免中國大陸地區慣用語，只在必要時替換詞彙與語序，不要改變意思。",
+			input: response.translated_text,
+		});
+
+		console.log('response_tw:', response_tw);
+		let output = response_tw.output;
+		let result = output[output.length - 1].content[0].text;
+		console.log('result:', result);
+
+		return result;
 	}
 
   export async function readAudioToText(audioBuffer: ArrayBuffer, env: Env, language: string): Promise<string> {
