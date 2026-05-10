@@ -42,13 +42,14 @@
 	// AI 推理配置
 	"ai": {
 		"binding": "AI"
-	}
+	},
 
 	/**
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
 	 */
-	// "vars": { "MY_VARIABLE": "production_value" },
+	// CORS proxy 允許轉發的目標 hostname（逗號分隔；後綴可加前綴點，例如 ".gov.tw"）
+	// "vars": { "CORS_PROXY_ALLOWED_HOSTS": "api.example.com,.gov.tw" },
 	/**
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/

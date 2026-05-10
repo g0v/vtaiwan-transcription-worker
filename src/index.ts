@@ -18,6 +18,8 @@ interface Env {
 	AI: Ai;
 	DB: D1Database;
 	R2: R2Bucket;
+	/** 逗號分隔，允許代理連線的目標 hostname（完整或後綴，例如 data.gov.tw、.gov.tw） */
+	CORS_PROXY_ALLOWED_HOSTS?: string;
 }
 
 interface UpdateOutlineRequest {
@@ -36,11 +38,98 @@ const ALLOWED_ORIGINS = [
 	'http://localhost:8081',
 	'https://vtaiwan.tw',
 	'https://www.vtaiwan.tw',
+	'https://vtaiwan.tw',
 	'https://vue.vtaiwan.tw',
 	'https://talk.vtaiwan.tw',
+	'https://feat-newsletters-page.vtaiwan.pages.dev'
 	// 可以根據需要添加更多允許的來源
   ];
 
+/** 僅允許使用 /api/cors-proxy 的瀏覽器來源（生產環境為 www.vtaiwan.tw；本地開發見 localhost） */
+const CORS_PROXY_CLIENT_ORIGINS = [
+	'https://www.vtaiwan.tw',
+	'https://vtaiwan.tw',
+	'http://localhost:3000',
+	'http://localhost:3001',
+	'http://localhost:4173',
+	'http://localhost:4174',
+	'http://localhost:8080',
+	'http://localhost:8081',
+	'https://feat-newsletters-page.vtaiwan.pages.dev'
+];
+
+function isCorsProxyClientAllowed(origin: string): boolean {
+	return CORS_PROXY_CLIENT_ORIGINS.includes(origin);
+}
+
+function getCorsHeadersForPath(pathname: string, origin: string) {
+	if (pathname.startsWith('/api/cors-proxy')) {
+		const allowed = isCorsProxyClientAllowed(origin);
+		return {
+			'Access-Control-Allow-Origin': allowed ? origin : 'null',
+			'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+			'Access-Control-Max-Age': '86400',
+			Vary: 'Origin',
+		};
+	}
+	return getCorsHeaders(origin);
+}
+
+/** 未設定 Env 時的預設：可依需求修改或改為僅由 wrangler vars 注入 */
+const DEFAULT_PROXY_TARGET_HOST_PATTERNS = ['.gov.tw', 'gov.tw'];
+
+function parseProxyAllowedHosts(env: Env): string[] {
+	const raw = env.CORS_PROXY_ALLOWED_HOSTS;
+	if (typeof raw === 'string' && raw.trim()) {
+		return raw
+			.split(',')
+			.map((s) => s.trim())
+			.filter(Boolean);
+	}
+	return DEFAULT_PROXY_TARGET_HOST_PATTERNS;
+}
+
+function isBlockedProxyHostname(hostname: string): boolean {
+	const h = hostname.toLowerCase();
+	if (h === 'localhost' || h === 'metadata.google.internal') return true;
+	if (h.endsWith('.localhost')) return true;
+	// IPv4 簡易私有／鏈路本機檢查
+	const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
+	if (ipv4) {
+		const a = Number(ipv4[1]);
+		const b = Number(ipv4[2]);
+		if (a === 10) return true;
+		if (a === 127) return true;
+		if (a === 0) return true;
+		if (a === 169 && b === 254) return true;
+		if (a === 192 && b === 168) return true;
+		if (a === 172 && b >= 16 && b <= 31) return true;
+	}
+	return false;
+}
+
+function isProxyTargetHostAllowed(hostname: string, patterns: string[]): boolean {
+	if (isBlockedProxyHostname(hostname)) return false;
+	return patterns.some((pattern) => {
+		const p = pattern.toLowerCase().replace(/^\./, '');
+		if (!p) return false;
+		if (pattern.startsWith('.')) {
+			return hostname === p || hostname.endsWith(`.${p}`);
+		}
+		return hostname === p;
+	});
+}
+
+/** 上游若帶 CORS，避免與 proxy 回應衝突 */
+const UPSTREAM_STRIP_CORS_HEADERS = new Set([
+	'access-control-allow-origin',
+	'access-control-allow-methods',
+	'access-control-allow-headers',
+	'access-control-expose-headers',
+	'access-control-max-age',
+	'access-control-allow-credentials',
+]);
 
 // 檢查來源是否被允許
 function isOriginAllowed(origin: string) {
@@ -63,16 +152,23 @@ function isOriginAllowed(origin: string) {
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const origin = request.headers.get('Origin') || '';
+		const pathname = new URL(request.url).pathname;
 
 		// 處理 CORS preflight 請求
 		if (request.method === 'OPTIONS') {
-			const corsHeaders = getCorsHeaders(origin);
+			const corsHeaders = getCorsHeadersForPath(pathname, origin);
 
-			// 如果來源不被允許，返回錯誤
-			if (!isOriginAllowed(origin)) {
+			if (pathname.startsWith('/api/cors-proxy')) {
+				if (!isCorsProxyClientAllowed(origin)) {
+					return new Response('Origin not allowed', {
+						status: 403,
+						headers: corsHeaders,
+					});
+				}
+			} else if (!isOriginAllowed(origin)) {
 				return new Response('Origin not allowed', {
-				status: 403,
-				headers: corsHeaders,
+					status: 403,
+					headers: corsHeaders,
 				});
 			}
 
@@ -82,8 +178,130 @@ export default {
 			});
 		}
 
-		const pathname = new URL(request.url).pathname;
-		const corsHeaders = getCorsHeaders(origin);
+		const corsHeaders = getCorsHeadersForPath(pathname, origin);
+
+		// 給 www.vtaiwan.tw（與本地開發）專用的連外 CORS proxy：GET/POST 等會轉發至 ?url= 指定之目標
+		if (pathname === '/api/cors-proxy' || pathname.startsWith('/api/cors-proxy/')) {
+			if (!origin || !isCorsProxyClientAllowed(origin)) {
+				return new Response(
+					JSON.stringify({ error: 'Origin not allowed for CORS proxy' }),
+					{
+						status: 403,
+						headers: {
+							...corsHeaders,
+							'Content-Type': 'application/json',
+						},
+					}
+				);
+			}
+
+			const targetUrlParam = new URL(request.url).searchParams.get('url');
+			if (!targetUrlParam) {
+				return new Response(
+					JSON.stringify({
+						error: 'Missing url',
+						hint: 'Use /api/cors-proxy?url=' + encodeURIComponent('https://example.com/path'),
+					}),
+					{
+						status: 400,
+						headers: {
+							...corsHeaders,
+							'Content-Type': 'application/json',
+						},
+					}
+				);
+			}
+
+			let targetUrl: URL;
+			try {
+				targetUrl = new URL(targetUrlParam);
+			} catch {
+				return new Response(JSON.stringify({ error: 'Invalid url parameter' }), {
+					status: 400,
+					headers: {
+						...corsHeaders,
+						'Content-Type': 'application/json',
+					},
+				});
+			}
+
+			if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
+				return new Response(JSON.stringify({ error: 'Only http(s) URLs are allowed' }), {
+					status: 400,
+					headers: {
+						...corsHeaders,
+						'Content-Type': 'application/json',
+					},
+				});
+			}
+
+			const allowedHosts = parseProxyAllowedHosts(env);
+			if (!isProxyTargetHostAllowed(targetUrl.hostname, allowedHosts)) {
+				return new Response(
+					JSON.stringify({
+						error: 'Target host not allowed',
+						hostname: targetUrl.hostname,
+					}),
+					{
+						status: 403,
+						headers: {
+							...corsHeaders,
+							'Content-Type': 'application/json',
+						},
+					}
+				);
+			}
+
+			const forwardHeaderNames = ['accept', 'accept-language', 'authorization', 'content-type', 'user-agent'];
+			const forwardHeaders = new Headers();
+			for (const name of forwardHeaderNames) {
+				const v = request.headers.get(name);
+				if (v) forwardHeaders.set(name, v);
+			}
+
+			const method = request.method;
+			const init: RequestInit = {
+				method,
+				headers: forwardHeaders,
+				redirect: 'follow',
+			};
+			if (method !== 'GET' && method !== 'HEAD') {
+				init.body = request.body;
+			}
+
+			try {
+				const upstream = await fetch(targetUrl.toString(), init);
+				const outHeaders = new Headers();
+				upstream.headers.forEach((value, key) => {
+					if (!UPSTREAM_STRIP_CORS_HEADERS.has(key.toLowerCase())) {
+						outHeaders.set(key, value);
+					}
+				});
+				for (const [k, v] of Object.entries(corsHeaders)) {
+					outHeaders.set(k, v);
+				}
+				outHeaders.set('Access-Control-Allow-Origin', origin);
+
+				return new Response(upstream.body, {
+					status: upstream.status,
+					statusText: upstream.statusText,
+					headers: outHeaders,
+				});
+			} catch (e: unknown) {
+				const message = e instanceof Error ? e.message : String(e);
+				console.error('CORS proxy upstream error:', message);
+				return new Response(
+					JSON.stringify({ error: 'Upstream request failed', message }),
+					{
+						status: 502,
+						headers: {
+							...corsHeaders,
+							'Content-Type': 'application/json',
+						},
+					}
+				);
+			}
+		}
 
 		if (pathname.startsWith('/api/transcription/')) {
 
