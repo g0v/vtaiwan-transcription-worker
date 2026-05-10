@@ -77,7 +77,7 @@ function getCorsHeadersForPath(pathname: string, origin: string) {
 }
 
 /** 未設定 Env 時的預設：可依需求修改或改為僅由 wrangler vars 注入 */
-const DEFAULT_PROXY_TARGET_HOST_PATTERNS = ['.gov.tw', 'gov.tw'];
+const DEFAULT_PROXY_TARGET_HOST_PATTERNS = ['medium.com', 'vtaiwantw.substack.com'];
 
 function parseProxyAllowedHosts(env: Env): string[] {
 	const raw = env.CORS_PROXY_ALLOWED_HOSTS;
