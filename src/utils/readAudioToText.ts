@@ -98,8 +98,14 @@ interface Env {
 	  // 檢查是否為 AI 幻覺回應
 	  const trimmedResult = result.trim();
 	  const isHallucination = (
-		(trimmedResult.startsWith('字幕志願者') || trimmedResult.startsWith('字幕志愿者')) &&
-		trimmedResult.length < 30
+		(trimmedResult.startsWith('字幕志願者')
+		 ||
+		 trimmedResult.startsWith('字幕志愿者')
+		|| trimmedResult.includes('感謝觀看')
+		|| trimmedResult.includes('謝謝觀看')
+		|| trimmedResult.includes('打賞支持')
+	    ) &&
+		trimmedResult.length < 40
 	  );
 
 	  if (isHallucination) {
