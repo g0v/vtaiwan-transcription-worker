@@ -20,6 +20,7 @@ interface Env {
 	R2: R2Bucket;
 	/** 逗號分隔，允許代理連線的目標 hostname（完整或後綴，例如 data.gov.tw、.gov.tw） */
 	CORS_PROXY_ALLOWED_HOSTS?: string;
+	MASTODON_TOKEN?: string;
 }
 
 interface UpdateOutlineRequest {
@@ -482,6 +483,30 @@ export default {
 			return new Response(JSON.stringify({ message: 'Outline updated successfully' }), {
 				status: 200,
 				headers: corsHeaders,
+			});
+		}
+
+		// Mastodon
+		if (pathname === '/api/mastodon') {
+			if (!env.MASTODON_TOKEN) {
+				return new Response('Mastodon token not found', { status: 500, headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json'
+				} });
+			}
+			const response = await fetch('https://g0v.social/api/v1/timelines/tag/vtaiwan?limit=20&local=true', {
+				headers: {
+					'Authorization': `Bearer ${env.MASTODON_TOKEN}`,
+					'Content-Type': 'application/json'
+				}
+			});
+			const data = await response.json();
+			return new Response(JSON.stringify(data), {
+				status: response.status,
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json'
+				},
 			});
 		}
 
