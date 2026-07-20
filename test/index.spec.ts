@@ -21,4 +21,40 @@ describe('Hello World worker', () => {
 		const response = await SELF.fetch('https://example.com');
 		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
 	});
+
+	it('encodes user-supplied outlines before storing them', async () => {
+		const ctx = createExecutionContext();
+		await worker.fetch(new IncomingRequest('http://example.com/api/create-table'), env, ctx);
+		await env.DB
+			.prepare('INSERT INTO transcriptions (meeting_id, transcription, outline) VALUES (?, ?, ?)')
+			.bind('20250621', 'existing transcription', 'existing outline')
+			.run();
+
+		const payload = {
+			meeting_id: '20250621',
+			outline: '<img src=x onerror=alert(1)>',
+		};
+		const updateResponse = await worker.fetch(
+			new IncomingRequest('http://example.com/api/update-outline', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload),
+			}),
+			env,
+			ctx
+		);
+		await waitOnExecutionContext(ctx);
+		expect(updateResponse.status).toBe(200);
+
+		const queryResponse = await worker.fetch(
+			new IncomingRequest('http://example.com/api/query-table'),
+			env,
+			createExecutionContext()
+		);
+		expect(queryResponse.headers.get('Content-Type')).toBe('application/json; charset=utf-8');
+		expect(queryResponse.headers.get('X-Content-Type-Options')).toBe('nosniff');
+		const records = await queryResponse.json<Array<{ meeting_id: string; outline: string }>>();
+		expect(records.find((record) => record.meeting_id === payload.meeting_id)?.outline)
+			.toBe('&lt;img src=x onerror=alert(1)&gt;');
+	});
 });

@@ -28,6 +28,23 @@ interface UpdateOutlineRequest {
 	outline: string;
 }
 
+/**
+ * 逐字稿與大綱均以純文字格式儲存。先將 HTML 特殊字元編碼，
+ * 即使下游誤用 innerHTML / v-html 呈現資料，內容也只會是文字。
+ */
+function sanitizeStoredPlainText(value: string): string {
+	return value
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
+function isValidMeetingId(meetingId: string): boolean {
+	return /^[A-Za-z0-9_-]{1,128}$/.test(meetingId);
+}
+
 // 允許的來源白名單
 const ALLOWED_ORIGINS = [
 	'https://vtaiwan.pages.dev',
@@ -393,7 +410,11 @@ export default {
 			const transcriptions = await env.DB.prepare('SELECT * FROM transcriptions').all();
 			return new Response(JSON.stringify(transcriptions.results), {
 				status: 200,
-				headers: corsHeaders,
+				headers: {
+					...corsHeaders,
+					'Content-Type': 'application/json; charset=utf-8',
+					'X-Content-Type-Options': 'nosniff',
+				},
 			});
 		}
 
@@ -423,26 +444,38 @@ export default {
 				.split('-')
 				.join('');
 
+			if (!isValidMeetingId(meeting_id)) {
+				return new Response(JSON.stringify({ error: 'Invalid meeting ID' }), {
+					status: 400,
+					headers: {
+						...corsHeaders,
+						'Content-Type': 'application/json',
+					},
+				});
+			}
+
 			console.log('Meeting ID:', meeting_id);
 
 			// 1. 讀取檔案內容
 			const arrayBuffer = await (file as File).arrayBuffer();
 			const decoder = new TextDecoder('utf-8');
 			const transcription = decoder.decode(arrayBuffer);
+			const sanitizedTranscription = sanitizeStoredPlainText(transcription);
 			console.log('File content read');
 
-			// 2. 上傳到R2，內容原封不動
+			// 2. 上傳已編碼的純文字到 R2，避免下游以 HTML 呈現時發生儲存型 XSS
 			const r2 = env.R2;
 			const key = `${meeting_id}.txt`;
-			await r2.put(key, (file as File).stream(), {
+			await r2.put(key, sanitizedTranscription, {
 				httpMetadata: {
-					contentType: 'text/plain; charset=utf-8'
+					contentType: 'text/plain; charset=utf-8',
+					contentDisposition: 'attachment',
 				}
 			});
 			console.log('File uploaded to R2:', key);
 
 			// 3. AI處理
-			const outline = await generateOutline(transcription, env);
+			const outline = sanitizeStoredPlainText(await generateOutline(transcription, env));
 
 			// 4. 檢查D1資料庫中是否存在
 			const meeting = await env.DB.prepare('SELECT * FROM transcriptions WHERE meeting_id = ?').bind(meeting_id).first();
@@ -450,7 +483,7 @@ export default {
 			if (!meeting) {
 				// 創建一個新的逐字稿記錄
 				console.log('Creating new transcription record');
-				await env.DB.prepare('INSERT INTO transcriptions (meeting_id, transcription, outline) VALUES (?, ?, ?)').bind(meeting_id, transcription, outline).run();
+				await env.DB.prepare('INSERT INTO transcriptions (meeting_id, transcription, outline) VALUES (?, ?, ?)').bind(meeting_id, sanitizedTranscription, outline).run();
 
 				return new Response(JSON.stringify({
 					message: 'Transcription created successfully',
@@ -463,7 +496,7 @@ export default {
 			} else {
 				// 更新現有的逐字稿記錄
 				console.log('Updating transcription record');
-				await env.DB.prepare('UPDATE transcriptions SET transcription = ?, outline = ? WHERE meeting_id = ?').bind(transcription, outline, meeting_id).run();
+				await env.DB.prepare('UPDATE transcriptions SET transcription = ?, outline = ? WHERE meeting_id = ?').bind(sanitizedTranscription, outline, meeting_id).run();
 
 				return new Response(JSON.stringify({
 					message: 'Transcription updated successfully',
@@ -479,7 +512,16 @@ export default {
 		// 更新逐字稿的outline，從POST的JSON中獲取meeting_id和outline
 		if (pathname === '/api/update-outline') {
 			const { meeting_id, outline } = await request.json() as UpdateOutlineRequest;
-			await env.DB.prepare('UPDATE transcriptions SET outline = ? WHERE meeting_id = ?').bind(outline, meeting_id).run();
+			if (typeof meeting_id !== 'string' || typeof outline !== 'string' || !isValidMeetingId(meeting_id)) {
+				return new Response(JSON.stringify({ error: 'Invalid meeting ID or outline' }), {
+					status: 400,
+					headers: {
+						...corsHeaders,
+						'Content-Type': 'application/json',
+					},
+				});
+			}
+			await env.DB.prepare('UPDATE transcriptions SET outline = ? WHERE meeting_id = ?').bind(sanitizeStoredPlainText(outline), meeting_id).run();
 			return new Response(JSON.stringify({ message: 'Outline updated successfully' }), {
 				status: 200,
 				headers: corsHeaders,
