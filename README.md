@@ -1,3 +1,11 @@
+# 專案開發遷移
+
+本專案為歷史留存，目前線上的vTaiwan主站專案儲存庫為：
+https://github.com/g0v/vTaiwan-hono
+
+若要提出錯誤回報與功能請求，請至：
+https://github.com/g0v/vTaiwan-hono/issues
+
 # vTaiwan 音頻轉錄與AI自動摘要 Worker
 
 這是一個基於 Cloudflare Workers 的音頻轉錄服務，使用 Whisper AI 模型將音頻檔案轉換為繁體中文文字。
